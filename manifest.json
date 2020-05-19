@@ -1,0 +1,25 @@
+{
+    "name": "Daily Bible Verse Extension",
+    "description": "Replace new tab page with a bible verse and background image updated daily",
+    "version": "1.0",
+    "manifest_version": 2,
+    "chrome_url_overrides": {
+        "newtab": "index.html"
+    },
+    "browser_action": {
+        "default_icon": "dbv_icon.png",
+        "default_title": "Daily Bible Verse"
+    },
+    "background": {
+        "scripts": [
+            "background.js",
+            "keys.js"
+        ],
+        "persistent": false
+    },
+    "permissions": [
+        "storage",
+        "https://api.esv.org/"
+      ],
+    "content_security_policy": "script-src 'self' https://api.esv.org/; object-src 'self'"
+}
