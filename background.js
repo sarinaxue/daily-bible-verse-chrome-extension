@@ -23,7 +23,7 @@ function messageData(type, data) {
             chrome.tabs.sendMessage(tabs[0].id, { type: 'verse', data: data });
         } else if (type == 'image') {
             chrome.tabs.sendMessage(tabs[0].id, { type: 'image', data: data });
-        } 
+        }
     });
 }
 
@@ -62,9 +62,10 @@ function getVerse(reference) {
                 return;
             }
             // Examine the text in the response
-            response.json().then((data) => {
-                messageData('verse', data);
-            });
+            response.json()
+                .then((data) => {
+                    messageData('verse', data);
+                });
         })
         .catch((err) => {
             alert('error');
@@ -77,26 +78,27 @@ function getVerse(reference) {
 function getImage() {
     let params = {
         'client_id': unsplash_access_key,
-        'per_page' : 1,
+        'per_page': 1,
         'orientation': 'landscape',
         'query': 'mountain,sky,ocean,nature,sunset'
     };
     fetch(unsplash_url + formatParams(params))
-    .then((response) => {
-        if (response.status !== 200) {
-            console.log('Looks like there was a problem. Status Code: ' + response.status);
-            return;
-        }
-        // Examine the text in the response
-        response.json().then((data) => {
-            let image = data.results[0];
-            messageData('image', image);
-            return;
+        .then((response) => {
+            if (response.status !== 200) {
+                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                return;
+            }
+            // Examine the text in the response
+            response.json()
+                .then((data) => {
+                    let image = data.results[0];
+                    messageData('image', image);
+                    return;
+                });
+        })
+        .catch((err) => {
+            alert('error');
         });
-    })
-    .catch((err) => {
-        alert('error');
-    });
 }
 
 /*
