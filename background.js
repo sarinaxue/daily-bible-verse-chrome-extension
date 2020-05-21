@@ -1,4 +1,5 @@
-const API_URL = 'https://api.esv.org/v3/passage/text/';
+const esv_url = 'https://api.esv.org/v3/passage/text/';
+const unsplash_url = 'https://api.unsplash.com/search/photos/';
 
 chrome.browserAction.onClicked.addListener((tab) => {
     chrome.tabs.create({
@@ -7,28 +8,29 @@ chrome.browserAction.onClicked.addListener((tab) => {
 });
 
 chrome.extension.onMessage.addListener((request) => {
-    if (request.action === 'loadVerse') {
-        let date = new Date().getDate();
-        getDailyVerse(date)
-            .then(function (verse) {
-                messageDailyVerse(verse);
-            })
-            .catch(function (error) {
-                alert('error');
-                // TODO: fix a placeholder verse
-                messageDailyVerse(error.statusText);
-            });
+    if (request.action === 'loadContent') {
+        //let date = new Date().getDate();
+        let reference = 'John 3:16'; // hardcoded for now
+        getVerse(reference);
+        getImage();
     }
 });
 
-// send response of API call to content.js
-function messageDailyVerse(verse) {
+
+function messageData(type, data) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { verse: verse });
+        if (type === 'verse') {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'verse', data: data });
+        } else if (type == 'image') {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'image', data: data });
+        } 
     });
 }
 
-// helper to stringify and uri encode the parameters
+
+/**
+ *  Helper to stringify and uri encode the parameters
+ **/
 function formatParams(params) {
     return '?' + Object
         .keys(params)
@@ -39,14 +41,11 @@ function formatParams(params) {
 }
 
 /**
- *  Call Bible API for a random verse from list of possible references
- *  Note: Uses stored verse from cache if date is the same
+ *  Calls esv API to retrieve specified verse
  **/
-function getDailyVerse(currDate) {
-    let storedData = fetchDBVData();
-    if (storedData && currDate === storedData.date) return storedData;
+function getVerse(reference) {
     let params = {
-        'q': 'John 3:16', // hardcoded for now
+        'q': reference,
         'include-passage-references': false,
         'include-verse-numbers': false,
         'include-first-verse-numbers': false,
@@ -55,34 +54,52 @@ function getDailyVerse(currDate) {
         'include-headings': false,
         'include-short-copyright': false
     };
-    let xhr = new XMLHttpRequest();
-    return new Promise((resolve, reject) => {
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState == 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    let response = JSON.parse(xhr.responseText);
-                    let DBVData = {
-                        verse: response.passages,
-                        reference: response.canonical,
-                        date: currDate
-                    };
-                    storeDBVData(DBVData);
-                    resolve(response);
-                } else {
-                    reject({
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-                }
+    let headers = { 'Authorization': 'Token ' + esv_key };
+    fetch(esv_url + formatParams(params), { headers: headers })
+        .then((response) => {
+            if (response.status !== 200) {
+                console.log('Looks like there was a problem. Status Code: ' + response.status);
+                return;
             }
-        };
-        xhr.open('GET', API_URL + formatParams(params), true);
-        xhr.setRequestHeader('Authorization', 'Token ' + API_KEY);
-        xhr.send();
+            // Examine the text in the response
+            response.json().then((data) => {
+                messageData('verse', data);
+            });
+        })
+        .catch((err) => {
+            alert('error');
+        });
+}
 
+/**
+ *  Call unsplash API to retrieve random landscape image
+ **/
+function getImage() {
+    let params = {
+        'client_id': unsplash_access_key,
+        'per_page' : 1,
+        'orientation': 'landscape',
+        'query': 'mountain,sky,ocean,nature,sunset'
+    };
+    fetch(unsplash_url + formatParams(params))
+    .then((response) => {
+        if (response.status !== 200) {
+            console.log('Looks like there was a problem. Status Code: ' + response.status);
+            return;
+        }
+        // Examine the text in the response
+        response.json().then((data) => {
+            let image = data.results[0];
+            messageData('image', image);
+            return;
+        });
+    })
+    .catch((err) => {
+        alert('error');
     });
 }
 
+/*
 function storeDBVData(data) {
     chrome.storage.sync.set({ data: data });
 }
@@ -92,3 +109,4 @@ function fetchDBVData(data) {
         return result;
     });
 }
+*/
