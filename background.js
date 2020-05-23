@@ -16,7 +16,6 @@ chrome.extension.onMessage.addListener((request) => {
     }
 });
 
-
 function messageData(type, data) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (type === 'verse') {
@@ -27,17 +26,23 @@ function messageData(type, data) {
     });
 }
 
-
 /**
  *  Helper to stringify and uri encode the parameters
  **/
 function formatParams(params) {
     return '?' + Object
         .keys(params)
-        .map(function (key) {
+        .map(function(key) {
             return key + '=' + encodeURIComponent(params[key])
         })
         .join('&');
+}
+
+/**
+ *  Helper to vary the background images
+ **/
+function selectRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 /**
@@ -72,15 +77,16 @@ function getVerse(reference) {
         });
 }
 
+
 /**
  *  Call unsplash API to retrieve random landscape image
  **/
 function getImage() {
+    let queries = ['nature', 'mountains', 'sky', 'flowers', 'forest', 'bible', 'christian', 'clouds', 'sunset', 'stars'];
     let params = {
         'client_id': unsplash_access_key,
-        'per_page': 1,
         'orientation': 'landscape',
-        'query': 'mountain,sky,ocean,nature,sunset'
+        'query': selectRandom(queries)
     };
     fetch(unsplash_url + formatParams(params))
         .then((response) => {
@@ -91,7 +97,7 @@ function getImage() {
             // Examine the text in the response
             response.json()
                 .then((data) => {
-                    let image = data.results[0];
+                    let image = selectRandom(data.results);
                     messageData('image', image);
                     return;
                 });

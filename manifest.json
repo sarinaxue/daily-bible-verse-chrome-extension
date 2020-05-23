@@ -20,6 +20,6 @@
     "permissions": [
         "storage",
         "https://api.esv.org/"
-      ],
+    ],
     "content_security_policy": "script-src 'self' https://api.esv.org/ https://api.unsplash.com/; object-src 'self'"
 }
